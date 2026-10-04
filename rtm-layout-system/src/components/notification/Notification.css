@@ -1,0 +1,15 @@
+.notification {
+  box-sizing: border-box;
+}
+
+.notification .notification-color-bar {
+  border-radius: 4px 4px 0 0;
+}
+
+.notification .notification-title {
+  margin: 0;
+}
+
+.notification .notification-message {
+  margin: 0;
+}
