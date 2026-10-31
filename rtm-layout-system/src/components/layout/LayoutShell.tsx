@@ -3,6 +3,7 @@ import { useState } from "react"
 import Brightness4Icon from "@mui/icons-material/Brightness4"
 import Brightness7Icon from "@mui/icons-material/Brightness7"
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft"
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore"
 import MenuIcon from "@mui/icons-material/Menu"
 import LanguageIcon from "@mui/icons-material/Language"
 import Box from "@mui/material/Box"
@@ -17,6 +18,8 @@ import Typography from "@mui/material/Typography"
 import AppBar from "@mui/material/AppBar"
 import Avatar from "@mui/material/Avatar"
 import SidebarMenu, { type LayoutMenuItem } from "./SidebarMenu"
+import HoverMenu from "./HoverMenu"
+import { useHoverMenu } from "./useHoverMenu"
 import FooterBar, { type FooterBarProps } from "./FooterBar"
 import {
   defaultHeaderBackgroundDark,
@@ -44,6 +47,8 @@ export interface LayoutShellProps {
   pages?: LayoutMenuItem[]
   selectedPage?: string
   onSelectPage?: (pageId: string) => void
+  /** Shows the page navigation as hover dropdown on the header logo (default: true when pages exist). */
+  headerMenu?: boolean
   user?: { name: string } | null
   mode: "light" | "dark"
   onToggleTheme: () => void
@@ -76,6 +81,7 @@ function LayoutShell({
   pages = [],
   selectedPage,
   onSelectPage,
+  headerMenu = true,
   user,
   mode,
   onToggleTheme,
@@ -105,6 +111,13 @@ function LayoutShell({
   const userMenuOpen = Boolean(userMenuAnchor)
   const [languageMenuAnchor, setLanguageMenuAnchor] = useState<HTMLElement | null>(null)
   const languageMenuOpen = Boolean(languageMenuAnchor)
+  const headerNav = useHoverMenu()
+  const hasHeaderMenu = headerMenu && pages.length > 0
+
+  const handleHeaderNavSelect = (pageId: string) => {
+    headerNav.close()
+    onSelectPage?.(pageId)
+  }
 
   const handleToggleCollapsed = () => {
     setCollapsed((prev) => {
@@ -133,9 +146,71 @@ function LayoutShell({
           <Toolbar sx={{ justifyContent: "space-between", minHeight: headerHeight }}>
             <Box sx={{ display: "flex", alignItems: "center", gap: 2, minWidth: 0 }}>
               {productLogo && (
-                <Box sx={{ display: "flex", alignItems: "center", height: 48, maxWidth: { xs: 150, sm: 220 }, overflow: "hidden" }}>
-                  {productLogo}
+                <Box
+                  role={hasHeaderMenu ? "button" : undefined}
+                  tabIndex={hasHeaderMenu ? 0 : undefined}
+                  aria-label={hasHeaderMenu ? "Navigation öffnen" : undefined}
+                  aria-haspopup={hasHeaderMenu ? "menu" : undefined}
+                  aria-expanded={hasHeaderMenu ? headerNav.isOpen : undefined}
+                  onMouseEnter={hasHeaderMenu ? (event) => headerNav.open(event.currentTarget, undefined) : undefined}
+                  onMouseLeave={hasHeaderMenu ? headerNav.scheduleClose : undefined}
+                  onClick={hasHeaderMenu ? (event) => headerNav.open(event.currentTarget, undefined) : undefined}
+                  onKeyDown={
+                    hasHeaderMenu
+                      ? (event) => {
+                          if (event.key === "Enter" || event.key === " " || event.key === "ArrowDown") {
+                            event.preventDefault()
+                            headerNav.open(event.currentTarget, undefined)
+                          } else if (event.key === "Escape") {
+                            headerNav.close()
+                          }
+                        }
+                      : undefined
+                  }
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    height: 48,
+                    maxWidth: { xs: 170, sm: 240 },
+                    overflow: "hidden",
+                    cursor: hasHeaderMenu ? "pointer" : undefined,
+                    borderRadius: 1,
+                    px: hasHeaderMenu ? 0.5 : 0,
+                    "&:hover, &:focus-visible": hasHeaderMenu ? { bgcolor: "action.hover", outline: "none" } : undefined,
+                  }}
+                >
+                  <Box sx={{ display: "flex", alignItems: "center", height: "100%", minWidth: 0, overflow: "hidden" }}>
+                    {productLogo}
+                  </Box>
+                  {hasHeaderMenu && (
+                    <ExpandMoreIcon
+                      fontSize="small"
+                      sx={{
+                        ml: 0.5,
+                        flexShrink: 0,
+                        transition: (theme) => theme.transitions.create("transform"),
+                        transform: headerNav.isOpen ? "rotate(180deg)" : "none",
+                      }}
+                    />
+                  )}
                 </Box>
+              )}
+              {hasHeaderMenu && (
+                <HoverMenu
+                  open={headerNav.isOpen}
+                  anchorEl={headerNav.anchorEl}
+                  items={pages}
+                  selectedId={selectedPage}
+                  onSelect={handleHeaderNavSelect}
+                  placement="bottom-start"
+                  onMouseEnter={headerNav.cancelClose}
+                  onMouseLeave={headerNav.scheduleClose}
+                  onClose={headerNav.close}
+                  onClickAway={(event) => {
+                    if (headerNav.anchorEl?.contains(event.target as Node)) return
+                    headerNav.close()
+                  }}
+                />
               )}
               <Typography variant="h6" component="div" noWrap>
                 {headerTitle ?? "RTM Layout System"}
