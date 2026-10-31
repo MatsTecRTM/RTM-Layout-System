@@ -57,6 +57,12 @@ export interface LayoutShellProps {
   onNavigateAccount?: () => void
   onNavigateSettings?: () => void
   onLogout?: () => void
+  /** Whether the "edit page layout" mode is currently active (drives the switch in the user menu). */
+  layoutEditMode?: boolean
+  /** Adds an "edit page layout" switch to the user menu; the item is hidden when no handler is given. */
+  onToggleLayoutEditMode?: () => void
+  /** Label of the "edit page layout" menu item (default: "Seitenlayout bearbeiten"). */
+  layoutEditLabel?: string
   headerBackgroundColor?: string
   sidebarBackgroundColor?: string
   iconBackgroundColor?: string
@@ -90,6 +96,9 @@ function LayoutShell({
   onNavigateAccount,
   onNavigateSettings,
   onLogout,
+  layoutEditMode = false,
+  onToggleLayoutEditMode,
+  layoutEditLabel = "Seitenlayout bearbeiten",
   headerBackgroundColor,
   sidebarBackgroundColor,
   iconBackgroundColor,
@@ -282,6 +291,21 @@ function LayoutShell({
                         <Switch checked={mode === "dark"} onChange={onToggleTheme} />
                       </Box>
                     </MenuItem>
+                    {onToggleLayoutEditMode && (
+                      <MenuItem
+                        role="menuitemcheckbox"
+                        aria-checked={layoutEditMode}
+                        onClick={() => {
+                          handleUserMenuClose()
+                          onToggleLayoutEditMode()
+                        }}
+                      >
+                        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: 200 }}>
+                          <span>{layoutEditLabel}</span>
+                          <Switch checked={layoutEditMode} tabIndex={-1} disableRipple />
+                        </Box>
+                      </MenuItem>
+                    )}
                     <MenuItem
                       onClick={() => {
                         handleUserMenuClose()
